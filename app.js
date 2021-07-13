@@ -33,7 +33,8 @@ app.post("/warriorExistOrNot", (request, response) => {
             $project : {
             "_id" : 1.0,
             "CONTACT NO" : 1.0,
-            "NAME" : 1.0
+            "NAME" : 1.0,
+            "isLeader" : 1.0
      }
    },
    {
