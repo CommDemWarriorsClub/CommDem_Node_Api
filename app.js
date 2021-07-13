@@ -1,5 +1,7 @@
 const Express = require("express");
 const BodyParser = require("body-parser");
+const mongoose = require('mongoose');
+
 const MongoClient = require("mongodb").MongoClient;
 const ObjectId = require("mongodb").ObjectID;
 const CONNECTION_URL = 'mongodb+srv://CommDem:CommDem@cluster0.ot1mr.mongodb.net/test?retryWrites=true&w=majority';
@@ -24,8 +26,7 @@ app.listen(process.env.PORT || 5000, () => {
 
 app.post("/WarriorsDetails", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
-        if (err) throw err;
-        database.collection("WarriorsDetails").find({}).toArray(function(err, result) {
+        database.collection("WarriorsDetails").aggregate().toArray(function(err, result) {
           if (err) {
               throw err;
           }
@@ -36,8 +37,8 @@ app.post("/WarriorsDetails", (request, response) => {
                   "Data" : result
               })
           }
-          console.log(result);
           db.close();
         });
       });
 });
+
