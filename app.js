@@ -11,6 +11,16 @@ app.use(BodyParser.json());
 app.use(BodyParser.urlencoded({ extended: true }));
 var database, collection;
 
+app.listen(5000, () => {
+    MongoClient.connect(CONNECTION_URL, { useNewUrlParser: true,useUnifiedTopology:true }, (error, client) => {
+        if(error) {
+            throw error;
+        }
+        database = client.db(DATABASE_NAME);
+        collection = database.collection("WarriorsDetails");
+        console.log("Connected to `" + DATABASE_NAME + "`!");
+    });
+});
 
 app.post("/WarriorsDetails", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
@@ -26,6 +36,7 @@ app.post("/WarriorsDetails", (request, response) => {
                   "Data" : result
               })
           }
+          console.log(result);
           db.close();
         });
       });
