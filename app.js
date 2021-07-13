@@ -20,21 +20,63 @@ app.listen(process.env.PORT || 5000, () => {
         }
         database = client.db(DATABASE_NAME);
         collection = database.collection("WarriorsDetails");
-        console.log("Connected to `" + DATABASE_NAME + "`!");
+        console.log("Welcome to `" + DATABASE_NAME + " Warriors !");
     });
 });
 
-app.post("/WarriorsDetails", (request, response) => {
+//request - mobileNo
+app.post("/warriorExistOrNot", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
-        database.collection("WarriorsDetails").aggregate().toArray(function(err, result) {
+        database.collection("WarriorsDetails").aggregate(
+            [
+                { 
+            $project : {
+            "_id" : 1.0,
+            "CONTACT NO" : 1.0,
+            "NAME" : 1.0
+     }
+   },
+   {
+       $match : {
+           "CONTACT NO" : request.body["mobileNo"]
+       }
+   }
+]
+).toArray(function(err, result) {
+          if (err) {
+              throw err;
+          }
+          else if(result.length > 0){
+              response.json({
+                  "isSuccess" : true,
+                  "message" : "Warrior Exists!",
+                  "Data" : result
+              })
+          }
+          else{
+            response.json({
+                "isSuccess" : true,
+                "message" : "Warrior Does Not Exists!",
+                "Data" : []
+            }) 
+          }
+          db.close();
+        });
+      });
+});
+
+//request - all details
+app.post("/addNewWarrior", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        database.collection("WarriorsDetails").insertOne(request.body, function(err, res) {
           if (err) {
               throw err;
           }
           else{
               response.json({
                   "isSuccess" : true,
-                  "message" : result.message,
-                  "Data" : result
+                  "message" : "Data Added Successfully!",
+                  "Data" : 1
               })
           }
           db.close();
@@ -42,3 +84,204 @@ app.post("/WarriorsDetails", (request, response) => {
       });
 });
 
+//request - memberId,Commitment,Date of Commitment
+app.post("/addNewCommitment", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        var req = {
+            "memberId" : ObjectId(request.body["memberId"]),
+            "Commitment" : request.body["Commitment"],
+            "commitmentDate" : request.body["commitmentDate"]
+        };
+        database.collection("Commitments").aggregate(
+            [
+   {
+       $match : {
+           "memberId" : ObjectId(request.body["memberId"]),
+           "Commitment" : request.body["Commitment"]
+       }
+   }
+]
+).toArray(function(err, result) {
+          if (err) {
+              throw err;
+          }
+          else if(result.length > 0){
+              response.json({
+                  "isSuccess" : true,
+                  "message" : "Commitment already Exists",
+                  "Data" : []
+              })
+              db.close();
+          }
+          else{
+            database.collection("Commitments").insertOne(req, function(err, res) {
+                if (err) {
+                    throw err;
+                }
+                else{
+                    response.json({
+                        "isSuccess" : true,
+                        "message" : "Commitment Added Successfully!",
+                        "Data" : 1
+                    })
+                }
+                db.close();
+              });
+          }
+          db.close();
+        });
+      });
+});
+
+//request - null / memberId
+app.post("/getCommitments", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        if(request.body!=null){
+            database.collection("Commitments").aggregate(
+                [
+       {
+           $match : {
+               "memberId" : request.body["memberId"]
+           }
+       }
+    ]
+    ).toArray(function(err, result) {
+              if (err) {
+                  throw err;
+              }
+              else if(result.length > 0){
+                  response.json({
+                      "isSuccess" : true,
+                      "message" : "Commitments Found!",
+                      "Data" : result
+                  })
+              }
+              else{
+                response.json({
+                    "isSuccess" : true,
+                    "message" : "No Commitments Found!",
+                    "Data" : []
+                }) 
+              }
+              db.close();
+            });
+    }
+    else{
+        database.collection("WarriorsDetails").aggregate().toArray(function(err, result) {
+          if (err) {
+              throw err;
+          }
+          else if(result.length > 0){
+              response.json({
+                  "isSuccess" : true,
+                  "message" : "Commitments Found!",
+                  "Data" : result
+              })
+          }
+          else{
+            response.json({
+                "isSuccess" : true,
+                "message" : "No Commitments Found!",
+                "Data" : []
+            }) 
+          }
+          db.close();
+        });
+    }
+      });
+});
+
+//request - Today's Date,memberId,commitmentId
+app.post("/addDailyCompletedCommitments", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        database.collection("dailyCompletedCommitments").aggregate([
+            {
+                $match : {
+                    "currentDate" : request.body["currentDate"],
+                    "memberId" : ObjectId(request.body["memberId"]),
+                    "commitmentId" : ObjectId(request.body["commitmentId"])
+                }
+            }
+        ]).toArray(function(err, result) {
+          if (err) {
+              throw err;
+          }
+          else if(result.length == 0){
+            database.collection("dailyCompletedCommitments").aggregate([
+                {
+                    $match : {
+                        "memberId" : ObjectId(request.body["memberId"]),
+                        "currentDate" : request.body["currentDate"],
+                    }
+                }
+            ]).toArray(function(err, result) {
+              if (err) {
+                  throw err;
+              }
+              else if(result.length > 0){
+                  console.log("result");
+                  console.log(result);
+                var req = {
+                      "currentDate" : request.body["currentDate"],
+                      "memberId" : ObjectId(request.body["memberId"]),
+                        "commitmentId" : [ObjectId(request.body["commitmentId"])]
+                  }
+                database.collection("dailyCompletedCommitments").updateOne(
+                  {
+                      "_id" : ObjectId(result[0]._id)
+                  },  
+            {  
+                $push:
+                 { 
+                     "commitmentId" : ObjectId(request.body["commitmentId"])
+                     } 
+                    },
+                    function (err, result) {
+                             if (err) {
+                        throw err;
+                    }
+                    else{
+                      response.json({
+                          "isSuccess" : true,
+                          "message" : "Commitment Completed Successfully!",
+                          "Data" : []
+                      }) 
+                    }
+                        db.close();
+                    }
+                );
+              }
+              else{
+                var req = {
+                    "currentDate" : request.body["currentDate"],
+                    "memberId" : ObjectId(request.body["memberId"]),
+                      "commitmentId" : [ObjectId(request.body["commitmentId"])]
+                }
+              database.collection("dailyCompletedCommitments").insertOne(req, function(err, res) {
+                  if (err) {
+                      throw err;
+                  }
+                  else{
+                      response.json({
+                          "isSuccess" : true,
+                          "message" : "Commitment Completed Successfully!",
+                          "Data" : 1
+                      })
+                  }
+                  db.close();
+                });
+              }
+              db.close();
+            });
+          }
+          else{
+            response.json({
+                "isSuccess" : true,
+                "message" : "Commitment Already Completed For Today!",
+                "Data" : []
+            })
+          }
+          db.close();
+        });
+      });
+});
