@@ -137,12 +137,13 @@ app.post("/addNewCommitment", (request, response) => {
 //request - null / memberId
 app.post("/getCommitments", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
-        if(request.body!=null){
+        console.log(request.body);
+        if(request.body["memberId"]!=null){
             database.collection("Commitments").aggregate(
                 [
        {
            $match : {
-               "memberId" : request.body["memberId"]
+               "memberId" : ObjectId(request.body["memberId"])
            }
        }
     ]
@@ -168,7 +169,7 @@ app.post("/getCommitments", (request, response) => {
             });
     }
     else{
-        database.collection("WarriorsDetails").aggregate().toArray(function(err, result) {
+        database.collection("Commitments").aggregate().toArray(function(err, result) {
           if (err) {
               throw err;
           }
