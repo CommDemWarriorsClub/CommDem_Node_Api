@@ -78,18 +78,27 @@ app.post("/allWarriors", (request, response) => {
                         as : "Commitments"
                     }
                 },
+                {
+                    $lookup : {
+                        from : "dailyCompletedCommitments",
+                        localField : "_id",
+                        foreignField : "memberId",
+                        as : "Completed_Commitments"
+                    }
+                },
                 { 
             $project : {
             "_id" : 1.0,
             "CONTACT NO" : 1.0,
             "NAME" : 1.0,
             "isLeader" : 1.0,
-            "Commitments" : 1.0
+            "Commitments" : 1.0,
+            "Completed_Commitments" : 1.0
      }
    },
 ]
 ).toArray(function(err, result) {
-          if (err) {
+          if (err) {  
               throw err;
           }
           else if(result.length > 0){
@@ -303,7 +312,8 @@ app.post("/addDailyCompletedCommitments", (request, response) => {
                 var req = {
                     "currentDate" : request.body["currentDate"],
                     "memberId" : ObjectId(request.body["memberId"]),
-                      "commitmentId" : [ObjectId(request.body["commitmentId"])]
+                      "commitmentId" : [ObjectId(request.body["commitmentId"])],
+                      "isCompleted" : true
                 }
               database.collection("dailyCompletedCommitments").insertOne(req, function(err, res) {
                   if (err) {
