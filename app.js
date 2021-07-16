@@ -70,12 +70,21 @@ app.post("/allWarriors", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
         database.collection("WarriorsDetails").aggregate(
             [
+                {
+                    $lookup : {
+                        from : "Commitments",
+                        localField : "_id",
+                        foreignField : "memberId",
+                        as : "Commitments"
+                    }
+                },
                 { 
             $project : {
             "_id" : 1.0,
             "CONTACT NO" : 1.0,
             "NAME" : 1.0,
-            "isLeader" : 1.0
+            "isLeader" : 1.0,
+            "Commitments" : 1.0
      }
    },
 ]

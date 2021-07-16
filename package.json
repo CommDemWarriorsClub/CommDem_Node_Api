@@ -1,7 +1,6 @@
 {
-  "name": "nodeProject",
+  "name": "nodeproject",
   "version": "1.0.0",
-  "description": "",
   "main": "app.js",
   "dependencies": {
     "body-parser": "^1.19.0",
@@ -20,5 +19,14 @@
   "license": "ISC",
   "engines": {
     "node": "14.17.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CommDemWarriorsClub/CommDem_Node_Api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CommDemWarriorsClub/CommDem_Node_Api/issues"
+  },
+  "homepage": "https://github.com/CommDemWarriorsClub/CommDem_Node_Api#readme",
+  "description": ""
 }
