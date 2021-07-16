@@ -136,7 +136,8 @@ app.post("/addNewCommitment", (request, response) => {
         var req = {
             "memberId" : ObjectId(request.body["memberId"]),
             "Commitment" : request.body["Commitment"],
-            "commitmentDate" : request.body["commitmentDate"]
+            "commitmentDate" : request.body["commitmentDate"],
+            "isCompleted" : false
         };
         database.collection("Commitments").aggregate(
             [
