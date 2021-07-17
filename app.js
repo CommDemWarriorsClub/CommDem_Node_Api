@@ -247,12 +247,11 @@ app.post("/dailyCommitments", (request, response) => {
                 {
                     $match : {
                         "memberId" : ObjectId(request.body["memberId"]),
-                        "currentDate" : request.body["currentDate"],
+                        "todaysDate" : request.body["todaysDate"],
                         "commitment" : [{
                             "commitmentId" : ObjectId(request.body["commitment"][0]["commitmentId"]),
                             "isCompleted" : request.body["commitment"][0]["isCompleted"],
-                        }
-                        ]
+                        }]
                     }
                 }
             ]).toArray(function(err, result) {
@@ -271,7 +270,7 @@ app.post("/dailyCommitments", (request, response) => {
                     {
                         $match : {
                             "memberId" : ObjectId(request.body["memberId"]),
-                            "currentDate" : request.body["currentDate"],
+                            "todaysDate" : request.body["todaysDate"],
                         }
                     }
                 ]).toArray(function(err, result) {
@@ -282,7 +281,7 @@ app.post("/dailyCommitments", (request, response) => {
                       console.log("result");
                       console.log(result);
                     var req = {
-                          "currentDate" : request.body["currentDate"],
+                          "todaysDate" : request.body["todaysDate"],
                           "memberId" : ObjectId(request.body["memberId"]),
                             "commitment" : [
                                 {
@@ -323,7 +322,7 @@ app.post("/dailyCommitments", (request, response) => {
                   }
                   else{
                     var req = {
-                        "currentDate" : request.body["currentDate"],
+                        "todaysDate" : request.body["todaysDate"],
                         "memberId" : ObjectId(request.body["memberId"]),
                           "commitment" : [{
                               "commitmentId" : ObjectId(request.body["commitment"][0]["commitmentId"]),
