@@ -72,10 +72,10 @@ app.post("/allWarriors", (request, response) => {
             [
                 {
                     $lookup : {
-                        from : "dailyCommitments",
+                        from : "Commitments",
                         localField : "_id",
                         foreignField : "memberId",
-                        as : "Daily_Commitments"
+                        as : "DailyCommitments"
                     }
                 },
                 { 
@@ -84,7 +84,7 @@ app.post("/allWarriors", (request, response) => {
             "CONTACT NO" : 1.0,
             "NAME" : 1.0,
             "isLeader" : 1.0,
-            "Daily_Commitments" : 1.0
+            "DailyCommitments" : 1.0
      }
    },
 ]
@@ -93,8 +93,6 @@ app.post("/allWarriors", (request, response) => {
               throw err;
           }
           else if(result.length > 0){
-           console.log("result");
-           console.log(result);
               response.json({
                   "isSuccess" : true,
                   "message" : "Warriors Found!",
@@ -132,13 +130,15 @@ app.post("/addNewWarrior", (request, response) => {
       });
 });
 
-//request - memberId,Commitment,Date of Commitment
+//request - memberId,Commitment,Date of Commitment,isCompleted,currentDate
 app.post("/addNewCommitment", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
         var req = {
             "memberId" : ObjectId(request.body["memberId"]),
             "Commitment" : request.body["Commitment"],
             "commitmentDate" : request.body["commitmentDate"],
+            "isCompleted" : false,
+            "todaysDate" : request.body["todaysDate"]
         };
         database.collection("Commitments").aggregate(
             [
@@ -170,7 +170,7 @@ app.post("/addNewCommitment", (request, response) => {
                     response.json({
                         "isSuccess" : true,
                         "message" : "Commitment Added Successfully!",
-                        "Data" : 1
+                        "Data" : "1"
                     })
                 }
                 db.close();
@@ -240,18 +240,84 @@ app.post("/getCommitments", (request, response) => {
       });
 });
 
+//request - memberId,commitmentId,isCompleted
+app.post("/updateCommitmentCompletion", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        var myquery = { 
+            "_id": ObjectId(request.body["commitmentId"]),
+         };
+  var newvalues = { 
+      $set: 
+      {
+          "isCompleted": request.body["isCompleted"]
+         }
+         };
+        database.collection("Commitments").updateOne(myquery, newvalues, function(err, res) {
+            if (err) throw err;
+            console.log("1 document updated");
+            response.json({
+                "isSuccess" : true,
+                "message" : "Commitment Updated Successfully!!",
+                "Data" : "1"
+            }) 
+            db.close();
+          });
+      });
+});
+
+let commitmentIdsOfMember = [];
+
+async function getMemberCommitment(request){
+    console.log("request");
+    console.log(request);
+ await MongoClient.connect(CONNECTION_URL, function(err, db) {
+    database.collection("Commitments").aggregate(
+        [
+{
+   $match : {
+       "memberId" : ObjectId(request["memberId"])
+   }
+}
+]
+).toArray(function(err, result) {
+      if (err) {
+          throw err;
+      }
+      else if(result.length > 0){
+          for(let i=0;i<result.length;i++){
+            commitmentIdsOfMember.push({
+                "commitmentId" : result[i]["_id"],
+                "isCompleted" : false
+            });
+          }
+         
+      }
+      else{
+       
+      }
+      db.close();
+    });
+});
+}
+
 //request - Today's Date,memberId,commitmentId
 app.post("/dailyCommitments", (request, response) => {
+    getMemberCommitment(request.body);
     MongoClient.connect(CONNECTION_URL, function(err, db) {
+        console.log("commitmentIdsOfMember");
+        console.log(commitmentIdsOfMember);
+        for(let j=0;j<commitmentIdsOfMember.length;j++){
             database.collection("dailyCommitments").aggregate([
                 {
                     $match : {
                         "memberId" : ObjectId(request.body["memberId"]),
                         "todaysDate" : request.body["todaysDate"],
-                        "commitment" : [{
-                            "commitmentId" : ObjectId(request.body["commitment"][0]["commitmentId"]),
-                            "isCompleted" : request.body["commitment"][0]["isCompleted"],
-                        }]
+                        "commitment" : [
+                            {
+                                "commitmentId" : commitmentIdsOfMember[j]["commitmentId"],
+                                "isCompleted" : commitmentIdsOfMember[j]["isCompleted"],
+                            }
+                        ]
                     }
                 }
             ]).toArray(function(err, result) {
@@ -348,6 +414,7 @@ app.post("/dailyCommitments", (request, response) => {
               }
               db.close();
             });
+        }
         //   }
         //   else{
         //     response.json({
