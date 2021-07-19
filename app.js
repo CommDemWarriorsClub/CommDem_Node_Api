@@ -239,6 +239,7 @@ app.post("/updateCommitmentOfMember", (request, response) => {
           "Commitment": request.body["Commitment"],
           "fromCommitmentDate": request.body["fromCommitmentDate"],
           "toCommitmentDate": request.body["toCommitmentDate"],
+          "todaysDate" : request.body["todaysDate"]
          }
          };
         database.collection("Commitments").updateOne(myquery, newvalues, function(err, res) {
