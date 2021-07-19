@@ -138,7 +138,8 @@ app.post("/addNewCommitment", (request, response) => {
             "Commitment" : request.body["Commitment"],
             "commitmentDate" : request.body["commitmentDate"],
             "isCompleted" : false,
-            "todaysDate" : request.body["todaysDate"]
+            "todaysDate" : request.body["todaysDate"],
+            "isLoadingFinished" : true
         };
         database.collection("Commitments").aggregate(
             [
