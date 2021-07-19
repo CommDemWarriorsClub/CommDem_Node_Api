@@ -115,10 +115,19 @@ app.post("/getAllNamesAndMemberIdOfWarriors", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
         database.collection("WarriorsDetails").aggregate(
             [
+                {
+                    $lookup : {
+                        from : "WarriorsBuddies",
+                        localField : "_id",
+                        foreignField : "memberId",
+                        as : "buddyDetails"
+                    }
+                },
                 { 
             $project : {
             "_id" : 1.0,
             "NAME" : 1.0,
+            "buddyDetails" : 1.0
      }
    },
 ]
@@ -169,7 +178,8 @@ app.post("/addNewCommitment", (request, response) => {
         var req = {
             "memberId" : ObjectId(request.body["memberId"]),
             "Commitment" : request.body["Commitment"],
-            "commitmentDate" : request.body["commitmentDate"],
+            "fromCommitmentDate" : request.body["fromCommitmentDate"],
+            "toCommitmentDate" : request.body["toCommitmentDate"],
             "isCompleted" : request.body["isCompleted"],
             "todaysDate" : request.body["todaysDate"],
             "isLoadingFinished" : true
@@ -179,7 +189,9 @@ app.post("/addNewCommitment", (request, response) => {
    {
        $match : {
            "memberId" : ObjectId(request.body["memberId"]),
-           "Commitment" : request.body["Commitment"]
+           "Commitment" : request.body["Commitment"],
+           "fromCommitmentDate" : request.body["fromCommitmentDate"],
+            "toCommitmentDate" : request.body["toCommitmentDate"],
        }
    }
 ]
@@ -469,8 +481,10 @@ app.post("/addMyBuddy", (request, response) => {
                     $match : {
                         "memberId" : ObjectId(request.body["memberId"]),
                         "buddyId" : ObjectId(request.body["buddyId"]),
-                    }
-                }
+                        "buddyFromDate" : request.body["buddyFromDate"],
+                        "buddyToDate" : request.body["buddyToDate"],
+                    },
+                },
             ]).toArray(function(err, result) {
               if (err) {
                   throw err;
