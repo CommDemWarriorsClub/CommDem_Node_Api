@@ -227,6 +227,33 @@ app.post("/addNewCommitment", (request, response) => {
       });
 });
 
+app.post("/updateCommitmentOfMember", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        var myquery = { 
+            "_id": ObjectId(request.body["commitmentId"]),
+            "memberId": ObjectId(request.body["memberId"]),
+         };
+  var newvalues = { 
+      $set: 
+      {
+          "Commitment": request.body["Commitment"],
+          "fromCommitmentDate": request.body["fromCommitmentDate"],
+          "toCommitmentDate": request.body["toCommitmentDate"],
+         }
+         };
+        database.collection("Commitments").updateOne(myquery, newvalues, function(err, res) {
+            if (err) throw err;
+            console.log("1 document updated");
+            response.json({
+                "isSuccess" : true,
+                "message" : "Commitment Updated Successfully!!",
+                "Data" : "1"
+            }) 
+            db.close();
+          });
+      });
+});
+
 //request - null / memberId
 app.post("/getCommitments", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
