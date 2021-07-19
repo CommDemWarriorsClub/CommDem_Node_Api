@@ -137,7 +137,7 @@ app.post("/addNewCommitment", (request, response) => {
             "memberId" : ObjectId(request.body["memberId"]),
             "Commitment" : request.body["Commitment"],
             "commitmentDate" : request.body["commitmentDate"],
-            "isCompleted" : false,
+            "isCompleted" : request.body["isCompleted"],
             "todaysDate" : request.body["todaysDate"],
             "isLoadingFinished" : true
         };
