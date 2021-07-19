@@ -264,7 +264,8 @@ app.post("/getCommitments", (request, response) => {
                 [
        {
            $match : {
-               "memberId" : ObjectId(request.body["memberId"])
+               "memberId" : ObjectId(request.body["memberId"]),
+               "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
            }
        }
     ]
@@ -560,9 +561,9 @@ function getCurrentDate() {
     return date;
 }
 
-// cron.schedule('* * * * *', async function() {
-//     await getCronedData()
-// })
+cron.schedule('* * * * *', async function() {
+    await getCronedData()
+})
 
 let ts = Date.now();
 
@@ -621,7 +622,8 @@ async function addNextDayCommitment(result){
         commitment.push({
             "memberId" : ObjectId(result[i]["memberId"]),
             "Commitment" : result[i]["Commitment"],
-            "commitmentDate" : result[i]["commitmentDate"],
+            "fromCommitmentDate" : result[i]["fromCommitmentDate"],
+            "toCommitmentDate" : result[i]["toCommitmentDate"],
             "isCompleted" : false,
             "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
             "isLoadingFinished" : true
