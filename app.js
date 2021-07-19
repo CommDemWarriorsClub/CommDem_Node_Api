@@ -111,6 +111,39 @@ app.post("/allWarriors", (request, response) => {
       });
 });
 
+app.post("/getAllNamesAndMemberIdOfWarriors", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        database.collection("WarriorsDetails").aggregate(
+            [
+                { 
+            $project : {
+            "_id" : 1.0,
+            "NAME" : 1.0,
+     }
+   },
+]
+).toArray(function(err, result) {
+          if (err) {  
+              throw err;
+          }
+          else if(result.length > 0){
+              response.json({
+                  "isSuccess" : true,
+                  "message" : "Warriors Found!",
+                  "Data" : result
+              })
+          }
+          else{
+            response.json({
+                "isSuccess" : true,
+                "message" : "No Warrior Found!",
+                "Data" : []
+            }) 
+          }
+          db.close();
+        });
+      });
+});
 //request - all details
 app.post("/addNewWarrior", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
@@ -429,6 +462,52 @@ app.post("/dailyCommitments", (request, response) => {
       });
 });
 
+app.post("/addMyBuddy", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+            database.collection("WarriorsBuddies").aggregate([
+                {
+                    $match : {
+                        "memberId" : ObjectId(request.body["memberId"]),
+                        "buddyId" : ObjectId(request.body["buddyId"]),
+                    }
+                }
+            ]).toArray(function(err, result) {
+              if (err) {
+                  throw err;
+              }
+              else if(result.length > 0){
+                response.json({
+                    "isSuccess" : true,
+                    "message" : "Buddy Already Exists in given time Interval!!",
+                    "Data" : []
+                }) 
+              }
+              else{
+                var req = {
+                    "memberId" : ObjectId(request.body["memberId"]),
+                    "buddyId" : ObjectId(request.body["buddyId"]),
+                    "buddyFromDate" : request.body["buddyFromDate"],
+                    "buddyToDate" : request.body["buddyToDate"],
+                };
+                database.collection("WarriorsBuddies").insertOne(req, function(err, res) {
+                    if (err) {
+                        throw err;
+                    }
+                    else{
+                        response.json({
+                            "isSuccess" : true,
+                            "message" : "My Buddy Added Successfully!",
+                            "Data" : "1"
+                        })
+                    }
+                    db.close();
+                  });
+              }
+              db.close();
+            });
+          db.close();
+      });
+});
 
 function getCurrentDate() {
     let date = moment()
@@ -443,19 +522,76 @@ function getCurrentDate() {
 //     await getCronedData()
 // })
 
+let ts = Date.now();
+
+let date_ob = new Date(ts);
+let date = date_ob.getDate();
+let month = date_ob.getMonth() + 1;
+let year = date_ob.getFullYear();
+let longMonth = date_ob.toLocaleString('en-us', { month: 'long' });
+
 async function getCronedData(){
         console.log('Api Called every minute');
+        console.log(date + " " + longMonth.toUpperCase() + " " + year);
         await MongoClient.connect(CONNECTION_URL, function(err, db) {
-            database.collection("Commitments").find({}).toArray(async function(err, resbody) {
-                if (err) throw err;
-                for (let i = 0; i < resbody.length; i++) {
-                    await updateCommitments(i,resbody[i],db);
-                  }
-                db.close();
-              });
+            database.collection("Commitments").aggregate([
+                {
+                    $match : {
+                        "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+                    },
+                }
+            ]).toArray(function(err, result) {
+              if (err) {
+                  throw err;
+              }
+              else if(result.length == 0){
+                MongoClient.connect(CONNECTION_URL, function(err, db) {
+                        database.collection("Commitments").aggregate(
+                            [
+                   {
+                       $match : {
+                           "todaysDate" : (date - 1) + " " + longMonth.toUpperCase() + " " + year,
+                       }
+                   }
+                ]
+                ).toArray(function(err, result) {
+                          if (err) {
+                              throw err;
+                          }
+                          else if(result.length > 0){
+                              addNextDayCommitment(result);
+                          }
+                          db.close();
+                        });
+                  });
+              }
+              db.close();
+            });
             });
 }
-   
+  
+let commitment = [];
+
+async function addNextDayCommitment(result){
+    console.log("result");
+    console.log(result);
+    for(let i=0;i<result.length;i++){
+        commitment.push({
+            "memberId" : ObjectId(result[i]["memberId"]),
+            "Commitment" : result[i]["Commitment"],
+            "commitmentDate" : result[i]["commitmentDate"],
+            "isCompleted" : false,
+            "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+            "isLoadingFinished" : true
+        });
+    }
+      database.collection("Commitments").insertMany(commitment, function(err, res) {
+          if (err) {
+              throw err;
+          }
+        });
+}
+
 async function updateCommitments(i,resbody,db){
     MongoClient.connect(CONNECTION_URL, function(err, db) {
         database.collection("dailyCommitments").aggregate([
