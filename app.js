@@ -180,19 +180,14 @@ app.post("/addNewCommitment", (request, response) => {
             "Commitment" : request.body["Commitment"],
             "fromCommitmentDate" : request.body["fromCommitmentDate"],
             "toCommitmentDate" : request.body["toCommitmentDate"],
-            "isCompleted" : request.body["isCompleted"],
-            "todaysDate" : request.body["todaysDate"],
-            "isLoadingFinished" : true
+            // "isCompleted" : request.body["isCompleted"],
+            // "todaysDate" : request.body["todaysDate"],
+            // "isLoadingFinished" : true
         };
         database.collection("Commitments").aggregate(
             [
    {
-       $match : {
-           "memberId" : ObjectId(request.body["memberId"]),
-           "Commitment" : request.body["Commitment"],
-           "fromCommitmentDate" : request.body["fromCommitmentDate"],
-            "toCommitmentDate" : request.body["toCommitmentDate"],
-       }
+       $match : req
    }
 ]
 ).toArray(function(err, result) {
@@ -213,11 +208,14 @@ app.post("/addNewCommitment", (request, response) => {
                     throw err;
                 }
                 else{
+                    console.log("res result");
+                    console.log(res["ops"]);
                     response.json({
                         "isSuccess" : true,
                         "message" : "Commitment Added Successfully!",
                         "Data" : "1"
                     })
+                    addNextDayCommitment(res["ops"]);
                 }
                 db.close();
               });
@@ -230,7 +228,7 @@ app.post("/addNewCommitment", (request, response) => {
 app.post("/updateCommitmentOfMember", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
         var myquery = { 
-            "_id": ObjectId(request.body["commitmentId"]),
+            "commitmentId": ObjectId(request.body["commitmentId"]),
             "memberId": ObjectId(request.body["memberId"]),
          };
   var newvalues = { 
@@ -239,10 +237,10 @@ app.post("/updateCommitmentOfMember", (request, response) => {
           "Commitment": request.body["Commitment"],
           "fromCommitmentDate": request.body["fromCommitmentDate"],
           "toCommitmentDate": request.body["toCommitmentDate"],
-          "todaysDate" : request.body["todaysDate"]
+        //   "todaysDate" : request.body["todaysDate"]
          }
          };
-        database.collection("Commitments").updateOne(myquery, newvalues, function(err, res) {
+        database.collection("dailyCommitments").updateMany(myquery, newvalues, function(err, res) {
             if (err) throw err;
             console.log("1 document updated");
             response.json({
@@ -265,7 +263,7 @@ app.post("/getCommitments", (request, response) => {
        {
            $match : {
                "memberId" : ObjectId(request.body["memberId"]),
-               "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+            //    "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
            }
        }
     ]
@@ -577,7 +575,7 @@ async function getCronedData(){
         console.log('Api Called every minute');
         console.log(date + " " + longMonth.toUpperCase() + " " + year);
         await MongoClient.connect(CONNECTION_URL, function(err, db) {
-            database.collection("Commitments").aggregate([
+            database.collection("dailyCommitments").aggregate([
                 {
                     $match : {
                         "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
@@ -589,7 +587,7 @@ async function getCronedData(){
               }
               else if(result.length == 0){
                 MongoClient.connect(CONNECTION_URL, function(err, db) {
-                        database.collection("Commitments").aggregate(
+                        database.collection("dailyCommitments").aggregate(
                             [
                    {
                        $match : {
@@ -603,6 +601,20 @@ async function getCronedData(){
                           }
                           else if(result.length > 0){
                               addNextDayCommitment(result);
+                          }
+                          else{
+                            database.collection("Commitments").aggregate().toArray(function(err, res) {
+                                if (err) {          
+                                    throw err;
+                                }
+                                else if(res.length > 0){
+                                    addNextDayCommitment(res);
+                                }
+                                else{
+                                 
+                                }
+                                db.close();
+                              });
                           }
                           db.close();
                         });
@@ -621,15 +633,16 @@ async function addNextDayCommitment(result){
     for(let i=0;i<result.length;i++){
         commitment.push({
             "memberId" : ObjectId(result[i]["memberId"]),
+            "commitmentId" : ObjectId(result[i]["_id"]),
             "Commitment" : result[i]["Commitment"],
             "fromCommitmentDate" : result[i]["fromCommitmentDate"],
             "toCommitmentDate" : result[i]["toCommitmentDate"],
             "isCompleted" : false,
             "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
             "isLoadingFinished" : true
-        });
+        }); 
     }
-      database.collection("Commitments").insertMany(commitment, function(err, res) {
+      database.collection("dailyCommitments").insertMany(commitment, function(err, res) {
           if (err) {
               throw err;
           }
