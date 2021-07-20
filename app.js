@@ -724,57 +724,56 @@ app.post("/addMyBuddy", (request, response) => {
       });
 });
 
-// request buddyId
-// app.post("/getMyBuddyDailyCommitments", (request, response) => {
-//     MongoClient.connect(CONNECTION_URL, function(err, db) {
-//             database.collection("WarriorsDetails").aggregate(
-//                 [
-//                     {
-//                         $match : {
-//                             "_id" : ObjectId(request.body["memberId"]) 
-//                         }
-//                     },
-//                     {
-//                         $lookup : {
-//                             from : "dailyCommitments",
-//                             localField : "_id",
-//                             foreignField : "memberId",
-//                             as : "DailyCommitments"
-//                         }
-//                     },
-//                     { 
-//                 $project : {
-//                 "_id" : 1.0,
-//                 "CONTACT NO" : 1.0,
-//                 "NAME" : 1.0,
-//                 "isLeader" : 1.0,
-//                 "DailyCommitments" : 1.0
-//          }
-//        },
-//     ]
-//     ).toArray(function(err, result) {
-//               if (err) {  
-//                   throw err;
-//               }
-//               else if(result.length > 0){
-//                   response.json({
-//                       "isSuccess" : true,
-//                       "message" : "Warriors Found!",
-//                       "Data" : result
-//                   })
-//               }
-//               else{
-//                 response.json({
-//                     "isSuccess" : true,
-//                     "message" : "No Warrior Found!",
-//                     "Data" : []
-//                 }) 
-//               }
-//               db.close();
-//             });
-//           db.close();
-//       });
-// });
+app.post("/getMyBuddyDailyCommitments", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+            database.collection("WarriorsDetails").aggregate(
+                [
+                    {
+                        $match : {
+                            "_id" : ObjectId(request.body["memberId"]) 
+                        }
+                    },
+                    {
+                        $lookup : {
+                            from : "dailyCommitments",
+                            localField : "_id",
+                            foreignField : "memberId",
+                            as : "DailyCommitments"
+                        }
+                    },
+                    { 
+                $project : {
+                "_id" : 1.0,
+                "CONTACT NO" : 1.0,
+                "NAME" : 1.0,
+                "isLeader" : 1.0,
+                "DailyCommitments" : 1.0
+         }
+       },
+    ]
+    ).toArray(function(err, result) {
+              if (err) {  
+                  throw err;
+              }
+              else if(result.length > 0){
+                  response.json({
+                      "isSuccess" : true,
+                      "message" : "Buddy's Commitments Found!",
+                      "Data" : result
+                  })
+              }
+              else{
+                response.json({
+                    "isSuccess" : true,
+                    "message" : "No Commitment Found!",
+                    "Data" : []
+                }) 
+              }
+              db.close();
+            });
+          db.close();
+      });
+});
 
 function getCurrentDate() {
     let date = moment()
