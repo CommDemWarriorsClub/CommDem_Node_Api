@@ -178,8 +178,8 @@ app.post("/addNewCommitment", (request, response) => {
         var req = {
             "memberId" : ObjectId(request.body["memberId"]),
             "Commitment" : request.body["Commitment"],
-            "fromCommitmentDate" : request.body["fromCommitmentDate"],
-            "toCommitmentDate" : request.body["toCommitmentDate"],
+            // "fromCommitmentDate" : request.body["fromCommitmentDate"],
+            // "toCommitmentDate" : request.body["toCommitmentDate"],
             // "isCompleted" : request.body["isCompleted"],
             // "todaysDate" : request.body["todaysDate"],
             // "isLoadingFinished" : true
@@ -231,6 +231,10 @@ app.post("/updateCommitmentOfMember", (request, response) => {
             "commitmentId": ObjectId(request.body["commitmentId"]),
             "memberId": ObjectId(request.body["memberId"]),
          };
+         var myquery1 = { 
+            "_id": ObjectId(request.body["commitmentId"]),
+            "memberId": ObjectId(request.body["memberId"]),
+         };
   var newvalues = { 
       $set: 
       {
@@ -243,12 +247,16 @@ app.post("/updateCommitmentOfMember", (request, response) => {
         database.collection("dailyCommitments").updateMany(myquery, newvalues, function(err, res) {
             if (err) throw err;
             console.log("1 document updated");
-            response.json({
-                "isSuccess" : true,
-                "message" : "Commitment Updated Successfully!!",
-                "Data" : "1"
-            }) 
-            db.close();
+            database.collection("Commitments").updateMany(myquery1, newvalues, function(err, res) {
+                if (err) throw err;
+                console.log("1 document updated");
+                response.json({
+                    "isSuccess" : true,
+                    "message" : "Commitment Updated Successfully!!",
+                    "Data" : "1"
+                }) 
+                db.close();
+              });
           });
       });
 });
@@ -360,7 +368,9 @@ async function getMemberCommitment(request){
           for(let i=0;i<result.length;i++){
             commitmentIdsOfMember.push({
                 "commitmentId" : result[i]["_id"],
-                "isCompleted" : false
+                "isCompleted" : false,
+                "fromCommitmentDate" : result[i]["fromCommitmentDate"],
+                "toCommitmentDate" : result[i]["toCommitmentDate"],
             });
           }
          
@@ -389,6 +399,8 @@ app.post("/dailyCommitments", (request, response) => {
                             {
                                 "commitmentId" : commitmentIdsOfMember[j]["commitmentId"],
                                 "isCompleted" : commitmentIdsOfMember[j]["isCompleted"],
+                                "fromCommitmentDate" : commitmentIdsOfMember[j]["fromCommitmentDate"],
+                               "toCommitmentDate" : commitmentIdsOfMember[j]["toCommitmentDate"],
                             }
                         ]
                     }
@@ -425,7 +437,9 @@ app.post("/dailyCommitments", (request, response) => {
                             "commitment" : [
                                 {
                                     "commitmentId" : ObjectId(request.body["commitment"][0]["commitmentId"]),
-                                    "isCompleted" : false
+                                    "isCompleted" : false,
+                                    "fromCommitmentDate" : commitmentIdsOfMember[j]["fromCommitmentDate"],
+                                    "toCommitmentDate" : commitmentIdsOfMember[j]["toCommitmentDate"],
                                 }
                             ]
                       }
@@ -439,7 +453,9 @@ app.post("/dailyCommitments", (request, response) => {
                          "commitment" : 
                                 {
                                     "commitmentId" : ObjectId(request.body["commitment"][0]["commitmentId"]),
-                                    "isCompleted" : false
+                                    "isCompleted" : false,
+                                    "fromCommitmentDate" : commitmentIdsOfMember[j]["fromCommitmentDate"],
+                                    "toCommitmentDate" : commitmentIdsOfMember[j]["toCommitmentDate"],
                                 }
                             
                          } 
@@ -464,8 +480,10 @@ app.post("/dailyCommitments", (request, response) => {
                         "todaysDate" : request.body["todaysDate"],
                         "memberId" : ObjectId(request.body["memberId"]),
                           "commitment" : [{
-                              "commitmentId" : ObjectId(request.body["commitment"][0]["commitmentId"]),
-                              "isCompleted" : false
+                              "commitmentId" : ObjectId(request.body["commitmentId"]),
+                              "isCompleted" : false,
+                              "fromCommitmentDate" : commitmentIdsOfMember[j]["fromCommitmentDate"],
+                              "toCommitmentDate" : commitmentIdsOfMember[j]["toCommitmentDate"],
                            }],
                     }
                   database.collection("dailyCommitments").insertOne(req, function(err, res) {
@@ -559,9 +577,9 @@ function getCurrentDate() {
     return date;
 }
 
-cron.schedule('* * * * *', async function() {
-    await getCronedData()
-})
+// cron.schedule('* * * * *', async function() {
+//     await getCronedData()
+// })
 
 let ts = Date.now();
 
@@ -620,7 +638,6 @@ async function getCronedData(){
                         });
                   });
               }
-              db.close();
             });
             });
 }
