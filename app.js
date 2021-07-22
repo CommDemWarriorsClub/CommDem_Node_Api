@@ -248,6 +248,7 @@ app.post("/addNewCommitment", (request, response) => {
             "Commitment" : request.body["Commitment"],
             "fromCommitmentDate" : request.body["fromCommitmentDate"],
             "toCommitmentDate" : request.body["toCommitmentDate"],
+            "everydayTime" : request.body["everydayTime"]
             // "isCompleted" : request.body["isCompleted"],
             // "todaysDate" : request.body["todaysDate"],
             // "isLoadingFinished" : true
@@ -724,6 +725,76 @@ app.post("/addMyBuddy", (request, response) => {
       });
 });
 
+app.post("/getCommitmentCategories", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        database.collection("commitmentCategories").aggregate().toArray(function(err, result) {
+          if (err) {
+              throw err;
+          }
+          else if(result.length > 0){
+              response.json({   
+                  "isSuccess" : true,
+                  "message" : "Commitment Categories Found!",
+                  "Data" : result
+              })
+          }
+          else{
+            response.json({
+                "isSuccess" : true,
+                "message" : "No Commitments Found!",
+                "Data" : []
+            }) 
+          }
+          db.close();
+        });
+      });
+});
+
+app.post("/addDropDownCommitmentsCategory", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        database.collection("commitmentCategories").aggregate(
+            [
+                {
+                    $match : {
+                        "commitmentCategory" : request.body["commitmentCategory"]
+                    }
+                },
+]
+).toArray(function(err, result) {
+          if (err) {  
+              throw err;
+          }
+          else if(result.length > 0){
+              response.json({
+                  "isSuccess" : true,
+                  "message" : "Commitment Category Already Exists!",
+                  "Data" : []
+              })
+          }
+          else{
+            var req = {
+                "commitmentCategory" : request.body["commitmentCategory"],
+                "commitmentCategoryTimePeriod" : request.body["commitmentCategoryTimePeriod"]
+            };
+            database.collection("commitmentCategories").insertOne(req, function(err, res) {
+                if (err) {
+                    throw err;
+                }
+                else{
+                    response.json({
+                        "isSuccess" : true,
+                        "message" : "Commitment Category Added Successfully!",
+                        "Data" : "1"
+                    })
+                }
+                db.close();
+              });
+          }
+          db.close();
+        });
+      });
+});
+
 app.post("/getMyBuddyDailyCommitments", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
             database.collection("WarriorsDetails").aggregate(
@@ -861,6 +932,7 @@ async function addNextDayCommitment(result){
             "Commitment" : result[i]["Commitment"],
             "fromCommitmentDate" : result[i]["fromCommitmentDate"],
             "toCommitmentDate" : result[i]["toCommitmentDate"],
+            "everydayTime" : result[i]["everydayTime"],
             "isCompleted" : false,
             "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
             "isLoadingFinished" : true
