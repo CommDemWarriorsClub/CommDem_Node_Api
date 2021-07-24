@@ -358,6 +358,7 @@ app.post("/getCommitments", (request, response) => {
                         {
                             $match : {
                                 "commitmentId" : ObjectId(result[i]["_id"]),
+                                "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
                             },
                         },
                     ]).toArray(function(err, resul) {
@@ -402,6 +403,65 @@ app.post("/getCommitments", (request, response) => {
                 response.json({
                     "isSuccess" : true,
                     "message" : "No Commitments Found!",
+                    "Data" : []
+                }) 
+              }
+              db.close();
+            });
+    }
+    else{
+        database.collection("Commitments").aggregate().toArray(function(err, result) {
+          if (err) {
+              throw err;
+          }
+          else if(result.length > 0){
+              response.json({
+                  "isSuccess" : true,
+                  "message" : "Commitments Found!",
+                  "Data" : result
+              })
+          }
+          else{
+            response.json({
+                "isSuccess" : true,
+                "message" : "No Commitments Found!",
+                "Data" : []
+            }) 
+          }
+          db.close();
+        });
+    }
+      });
+});
+
+//request - memberId
+app.post("/getdailyCommitmentsOfTodaysDate", (request, response) => {
+    MongoClient.connect(CONNECTION_URL, function(err, db) {
+        if(request.body["memberId"]!=null){
+            database.collection("dailyCommitments").aggregate(
+                [
+       {
+           $match : {
+               "memberId" : ObjectId(request.body["memberId"]),
+               "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+           }
+       }
+    ]
+    ).toArray(function(err, result) {
+              if (err) {
+                  throw err;
+              }
+              else if(result.length > 0){
+                  response.json({
+                    "isSuccess" : true,
+                    "message" : "Today's Daily Commitments Found!",
+                    "Data" : result
+                }) 
+              }
+              else{
+                response.json({
+                    "isSuccess" : true,
+                    "message" : "Today's Daily Commitment  Fo!",
                     "Data" : []
                 }) 
               }
