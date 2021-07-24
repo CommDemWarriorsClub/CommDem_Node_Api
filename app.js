@@ -248,7 +248,7 @@ app.post("/addNewCommitment", (request, response) => {
             "Commitment" : request.body["Commitment"],
             "fromCommitmentDate" : request.body["fromCommitmentDate"],
             "toCommitmentDate" : request.body["toCommitmentDate"],
-            "everydayTime" : request.body["everydayTime"]
+            "Goal" : request.body["Goal"]
             // "isCompleted" : request.body["isCompleted"],
             // "todaysDate" : request.body["todaysDate"],
             // "isLoadingFinished" : true
@@ -369,6 +369,7 @@ app.post("/getCommitments", (request, response) => {
                         database.collection("dailyCommitments").insertMany([{
                             "memberId" : result[i]["memberId"],
                             "commitmentId" : result[i]["_id"],
+                            "Goal" : result[i]["Goal"],
                             "Commitment" : result[i]["Commitment"],
                             "fromCommitmentDate" : result[i]["fromCommitmentDate"],
                             "toCommitmentDate" : result[i]["toCommitmentDate"],
@@ -995,7 +996,7 @@ async function addNextDayCommitment(result){
             "Commitment" : result[i]["Commitment"],
             "fromCommitmentDate" : result[i]["fromCommitmentDate"],
             "toCommitmentDate" : result[i]["toCommitmentDate"],
-            "everydayTime" : result[i]["everydayTime"],
+            "Goal" : result[i]["Goal"],
             "isCompleted" : false,
             "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
             "isLoadingFinished" : true
