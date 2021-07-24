@@ -372,7 +372,10 @@ app.post("/getCommitments", (request, response) => {
                             "fromCommitmentDate" : result[i]["fromCommitmentDate"],
                             "toCommitmentDate" : result[i]["toCommitmentDate"],
                             "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
-                            "isCompleted" : false,
+                            "CompletedOrNotData" : [{
+                                "isCompleted" : false,
+                                "Data" : []
+                            }],
                             "isLoadingFinished" : true
                         }], function(err, res) {
                             if (err) {
