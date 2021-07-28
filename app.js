@@ -439,12 +439,12 @@ app.post("/getCommitments", (request, response) => {
 app.post("/getdailyCommitmentsOfTodaysDate", (request, response) => {
     MongoClient.connect(CONNECTION_URL, function(err, db) {
         if(request.body["memberId"]!=null){
-            database.collection("dailyCommitments").aggregate(
+            database.collection("Commitments").aggregate(
                 [
        {
            $match : {
                "memberId" : ObjectId(request.body["memberId"]),
-               "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+            //    "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
            }
        }
     ]
@@ -453,16 +453,117 @@ app.post("/getdailyCommitmentsOfTodaysDate", (request, response) => {
                   throw err;
               }
               else if(result.length > 0){
-                  response.json({
-                    "isSuccess" : true,
-                    "message" : "Today's Daily Commitments Found!",
-                    "Data" : result
-                }) 
+                  for(let i=0;i<result.length;i++){
+                      console.log('result[i]["_id"]');
+                      console.log(result[i]);
+                    database.collection("dailyCommitments").aggregate([
+                        {
+                            $match : {
+                                "commitmentId" : ObjectId(result[i]["_id"]),
+                                "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+                            },
+                        },
+                    ]).toArray(function(err, resul) {
+                      if (err) {
+                          throw err;
+                      }
+                      else if(resul.length == 0){
+                        database.collection("dailyCommitments").insertMany([{
+                            "memberId" : result[i]["memberId"],
+                            "commitmentId" : result[i]["_id"],
+                            "Goal" : result[i]["Goal"],
+                            "Commitment" : result[i]["Commitment"],
+                            "fromCommitmentDate" : result[i]["fromCommitmentDate"],
+                            "toCommitmentDate" : result[i]["toCommitmentDate"],
+                            "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+                            "CompletedOrNotData" : [{
+                                "isCompleted" : false,
+                                "Data" : []
+                            }],
+                            "isLoadingFinished" : true
+                        }], function(err, res) {
+                            if (err) {
+                                throw err;
+                            }
+                            else{
+                              // res.json({
+                              //       "isSuccess" : true,
+                              //       "message" : "New Commitment Completed Successfully!",
+                              //       "Data" : 1
+                              //   })
+                            }
+                          });
+                          database.collection("dailyCommitments").aggregate(
+                            [
+                   {
+                       $match : {
+                           "memberId" : ObjectId(request.body["memberId"]),
+                           "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+                       }
+                   }
+                ]
+                ).toArray(function(err, result) {
+                          if (err) {
+                              throw err;
+                          }
+                          else if(result.length > 0){
+                              response.json({
+                                "isSuccess" : true,
+                                "message" : "Today's Daily Commitments Found!",
+                                "Data" : result
+                            }) 
+                          }
+                          else{
+                            response.json({
+                                "isSuccess" : true,
+                                "message" : "Today's Daily Commitment  Not Found!",
+                                "Data" : []
+                            }) 
+                          }
+                          db.close();
+                        });
+                      }
+                    });
+                  }
+                  database.collection("dailyCommitments").aggregate(
+                    [
+           {
+               $match : {
+                   "memberId" : ObjectId(request.body["memberId"]),
+                   "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
+               }
+           }
+        ]
+        ).toArray(function(err, result) {
+                  if (err) {
+                      throw err;
+                  }
+                  else if(result.length > 0){
+                      response.json({
+                        "isSuccess" : true,
+                        "message" : "Today's Daily Commitments Found!",
+                        "Data" : result
+                    }) 
+                  }
+                  else{
+                    // response.json({
+                    //     "isSuccess" : true,
+                    //     "message" : "Today's Daily Commitment  Not Found!",
+                    //     "Data" : []
+                    // }) 
+                  }
+                  db.close();
+                });
+                //   response.json({
+                //     "isSuccess" : true,
+                //     "message" : "Commitments Found!",
+                //     "Data" : result
+                // }) 
               }
               else{
                 response.json({
                     "isSuccess" : true,
-                    "message" : "Today's Daily Commitment  Fo!",
+                    "message" : "No Commitments Found!",
                     "Data" : []
                 }) 
               }
@@ -503,7 +604,13 @@ app.post("/updateCommitmentCompletion", (request, response) => {
   var newvalues = { 
       $set: 
       {
-          "isCompleted": request.body["isCompleted"]
+        "CompletedOrNotData" : [{
+            "isCompleted" : request.body["isCompleted"],
+            "Data" : [{
+                "timeOfCompletion" : request.body["timeOfCompletion"]
+            }
+            ]
+        }],
          }
          };
         database.collection("dailyCommitments").updateOne(myquery, newvalues, function(err, res) {
@@ -997,7 +1104,10 @@ async function addNextDayCommitment(result){
             "fromCommitmentDate" : result[i]["fromCommitmentDate"],
             "toCommitmentDate" : result[i]["toCommitmentDate"],
             "Goal" : result[i]["Goal"],
-            "isCompleted" : false,
+            "CompletedOrNotData" : [{
+                "isCompleted" : false,
+                "Data" : []
+            }],
             "todaysDate" : date + " " + longMonth.toUpperCase() + " " + year,
             "isLoadingFinished" : true
         }); 
